@@ -30,12 +30,13 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
     private LinearLayout panelWifi, panelTimer;
     private TextView tabWifi, tabTimer;
     private Button applyButton;
-    private EditText etWifiName, etWifiPassword, etPasscode, etDeviceName;
+    private EditText etWifiName, etWifiPassword, etPasscode, etDeviceName, etGreaseQty;
     private EditText etRunHour, etRunMin, etPauseHour, etPauseMin, etMonitorHour1, etMonitorMin1, etMonitorHour2, etMonitorMin2;
 
     private BleManager bleManager;
 
     // UUIDs for characteristics
+
     private final UUID PASSCODE_CHAR_UUID = UUID.fromString("01cdab89-6745-2301-8967-452301efcdab");
     private final UUID WIFI_SSID_CHAR_UUID = UUID.fromString("03cdab89-6745-2301-8967-452301efcdab");
     private final UUID WIFI_PASS_CHAR_UUID = UUID.fromString("04cdab89-6745-2301-8967-452301efcdab");
@@ -45,6 +46,7 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
     private final UUID PAUSETIME_CHAR_UUID = UUID.fromString("07cdab89-6745-2301-8967-452301efcdab");
     private final UUID MONITOR1_CHAR_UUID = UUID.fromString("08cdab89-6745-2301-8967-452301efcdab");
     private final UUID MONITOR2_CHAR_UUID = UUID.fromString("09cdab89-6745-2301-8967-452301efcdab");
+    private final UUID GREASE_QTY_CHAR_UUID = UUID.fromString("0acdab89-6745-2301-8967-452301efcdab");
 
     private final UUID WIFI_SERVICE_UUID = UUID.fromString("efcdab89-6745-2301-8967-452301efcdab");
     
@@ -73,6 +75,7 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
         etWifiPassword = findViewById(R.id.etWifiPassword);
         etPasscode = findViewById(R.id.etPasscode);
         etDeviceName = findViewById(R.id.etDeviceName);
+        etGreaseQty = findViewById(R.id.etGreaseQty);
 
         // Timer Fields
         etRunHour = findViewById(R.id.etRunHour);
@@ -87,6 +90,7 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
         // Apply filters to hours and minutes
         setupRangeFilters();
 
+        //sets up the ble connection here.
         bleManager = BleManager.getInstance();
         bleManager.addListener(this);
 
@@ -96,6 +100,9 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
         
         // Apply button logic
         applyButton.setOnClickListener(v -> showConfirmationDialog());
+
+        // Disconnect button logic
+        findViewById(R.id.disconnectButton).setOnClickListener(v -> showDisconnectDialog());
 
         // Default view
         showPanel(true);
@@ -152,6 +159,26 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
         builder.setPositiveButton("ALLOW", (dialog, which) -> {
             applyAllChanges();
             Toast.makeText(this, "Changes Applied", Toast.LENGTH_SHORT).show();
+        });
+        
+        builder.setNegativeButton("NOT ALLOW", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void showDisconnectDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Disconnect Device");
+        builder.setMessage("Do you want to disconnect from this device?");
+        
+        builder.setPositiveButton("ALLOW", (dialog, which) -> {
+            if (bleManager != null) {
+                bleManager.disconnect();
+                Toast.makeText(this, "Disconnecting...", Toast.LENGTH_SHORT).show();
+            }
         });
         
         builder.setNegativeButton("NOT ALLOW", (dialog, which) -> {
@@ -220,6 +247,7 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
             byte[] pauseBytes = timeToBytes(etPauseHour, etPauseMin);
             byte[] monitor1Bytes = timeToBytes(etMonitorHour1, etMonitorMin1);
             byte[] monitor2Bytes = timeToBytes(etMonitorHour2, etMonitorMin2);
+            byte[] greaseBytes = qtyToBytes(etGreaseQty);
 
             Log.d("BLE_DEBUG", "Applying Timer settings...");
 
@@ -252,6 +280,14 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
                     Log.d("BLE_DEBUG", "Sending Monitor 2...");
                     bleManager.writeCharacteristic(WIFI_SERVICE_UUID, MONITOR2_CHAR_UUID, monitor2Bytes, WRITE_TYPE);
                 }, delay);
+                delay += STEP;
+            }
+
+            if (greaseBytes != null) {
+                handler.postDelayed(() -> {
+                    Log.d("BLE_DEBUG", "Sending Grease Qty...");
+                    bleManager.writeCharacteristic(WIFI_SERVICE_UUID, GREASE_QTY_CHAR_UUID, greaseBytes, WRITE_TYPE);
+                }, delay);
             }
         }
     }
@@ -265,9 +301,22 @@ public class SettingPageActivity extends AppCompatActivity implements BleManager
         int mm = mins.isEmpty() ? 0 : Integer.parseInt(mins);
         
         byte[] data = new byte[2];
-        data[0] = (byte) (hh & 0xFF); // First byte: Hours
-        data[1] = (byte) (mm & 0xFF); // Second byte: Minutes
+        data[0] = (byte) (hh & 0xFF); // First byte: Hours  ::0xFF converts the int to byte
+        data[1] = (byte) (mm & 0xFF); // Second byte: Minutes::0xFF converts the int to byte.
         return data;
+    }
+
+    private byte[] qtyToBytes(EditText et) {
+        String val = et.getText().toString();
+        if (val.isEmpty()) return null;
+        try {
+            int qty = Integer.parseInt(val);
+            byte[] data = new byte[1];
+            data[0] = (byte) (qty & 0xFF);        // Only one byte
+            return data;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());

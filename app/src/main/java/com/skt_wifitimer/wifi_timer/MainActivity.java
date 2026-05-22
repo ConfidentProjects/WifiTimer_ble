@@ -138,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleLis
 
                 connectBtn.setOnClickListener(v -> {
                     stopScan(); // Stop scanning when connecting
-                    Toast.makeText(getContext(), "Connecting to " + device.name, Toast.LENGTH_SHORT).show();
+                   // Toast.makeText(getContext(), "Connecting to " + device.name, Toast.LENGTH_SHORT).show();
                     bleManager.connect(MainActivity.this, device.device);
                 });
             }
@@ -153,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleLis
         // In a real app you might want to track which device you are connecting to
         if (newState == BluetoothProfile.STATE_CONNECTED) {
             runOnUiThread(() -> {
-                Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT).show();
+             //  Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT).show();
                 // We update all models that might be connecting for now, or just the one with matching address
                 // Since BleManager doesn't give us the address here easily without more state,
                 // we can either update BleManager to pass the address or find the gatt device
@@ -164,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleLis
             });
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
             runOnUiThread(() -> {
-                Toast.makeText(MainActivity.this, "Disconnected", Toast.LENGTH_SHORT).show();
+              //  Toast.makeText(MainActivity.this, "Disconnected", Toast.LENGTH_SHORT).show();
                 BluetoothGatt gatt = bleManager.getGatt();
                 if (gatt != null) {
                     updateDeviceStatus(gatt.getDevice().getAddress(), "Disconnected");
@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleLis
 
     @Override
     public void onServicesDiscovered() {
-        runOnUiThread(() -> Toast.makeText(MainActivity.this, "Services Discovered Successfully", Toast.LENGTH_SHORT).show());
+       // runOnUiThread(() -> Toast.makeText(MainActivity.this, "Services Discovered Successfully", Toast.LENGTH_SHORT).show());
     }
 
     private void updateDeviceStatus(String address, String status) {
@@ -208,10 +208,23 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleLis
 
             BluetoothDeviceModel deviceModel = new BluetoothDeviceModel(deviceName, device.getAddress(), "Not Connected", device);
 
-            if (!deviceList.contains(deviceModel)) {
-                deviceList.add(deviceModel);
-                adapter.notifyDataSetChanged();
+            boolean found = false;
+            for (BluetoothDeviceModel model : deviceList) {
+                if (model.address.equals(device.getAddress())) {
+                    // Device already in list
+                    if (!"Connected".equals(model.status)) {
+                        model.status = "Not Connected"; // Found again, so it's available
+                        if (deviceName != null) model.name = deviceName;
+                    }
+                    found = true;
+                    break;
+                }
             }
+
+            if (!found) {
+                deviceList.add(deviceModel);
+            }
+            runOnUiThread(() -> adapter.notifyDataSetChanged());
         }
     };
 
@@ -224,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleLis
 
         BluetoothManager bluetoothManager = getSystemService(BluetoothManager.class);
         bluetoothAdapter = bluetoothManager.getAdapter();
+        //sets up the object for bluetooth connections....
         bleManager = BleManager.getInstance();
         bleManager.addListener(this);
 
@@ -310,8 +324,16 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleLis
 
         if (scanning) return;
 
-        deviceList.clear();
+        // Keep connected devices in the list, remove others
+        ArrayList<BluetoothDeviceModel> toRemove = new ArrayList<>();
+        for (BluetoothDeviceModel model : deviceList) {
+            if (!"Connected".equals(model.status)) {
+                toRemove.add(model);
+            }
+        }
+        deviceList.removeAll(toRemove);
         adapter.notifyDataSetChanged();
+
         Toast.makeText(this, "Scanning...", Toast.LENGTH_SHORT).show();
 
         // Stops scanning after 10 seconds.
@@ -343,6 +365,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleLis
             }
         }
         scanning = false;
-        Toast.makeText(this, "Scan stopped", Toast.LENGTH_SHORT).show();
+      //  Toast.makeText(this, "Scan stopped", Toast.LENGTH_SHORT).show();
     }
 }

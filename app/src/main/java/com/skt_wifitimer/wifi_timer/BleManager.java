@@ -21,27 +21,31 @@ import java.util.UUID;
 public class BleManager {
     private static final String TAG = "BleManager";
     @SuppressWarnings("StaticFieldLeak")
-    private static BleManager instance;
+    private static BleManager instance;    //class variable , a reference to an object
+                                           //static variable.
     private BluetoothGatt bluetoothGatt;
     private final List<BleListener> listeners = new ArrayList<>();
     private Context context;
 
+
+    //Implementing publisher-subscriber pattern.
     public interface BleListener {
         void onConnectionStateChange(int newState);
         void onServicesDiscovered();
     }
 
-    private BleManager() {}
+    private BleManager() {}           //a private constructor.
 
-    public static synchronized BleManager getInstance() {
+    public static synchronized BleManager getInstance() {    //static function
         if (instance == null) {
             instance = new BleManager();
         }
         return instance;
     }
 
+    //method to register the suscribers like mainactivity and all.
     public void addListener(BleListener listener) {
-        if (!listeners.contains(listener)) {
+        if (!listeners.contains(listener)) { //check for duplicates
             listeners.add(listener);
         }
     }
@@ -50,10 +54,12 @@ public class BleManager {
         listeners.remove(listener);
     }
 
+    //this is like a getter method.
     public BluetoothGatt getGatt() {
         return bluetoothGatt;
     }
 
+    //
     public void connect(Context context, BluetoothDevice device) {
         this.context = context.getApplicationContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -67,6 +73,7 @@ public class BleManager {
             bluetoothGatt = null;
         }
 
+        //does connection and returns a bluetooth gatt object.
         bluetoothGatt = device.connectGatt(context, false, gattCallback);
     }
 
@@ -83,6 +90,8 @@ public class BleManager {
     public void writeCharacteristic(UUID serviceUuid, UUID charUuid, byte[] data) {
         writeCharacteristic(serviceUuid, charUuid, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
     }
+
+    //This is a wrapper function for writing characteristics to the esp32 device.
 
     public void writeCharacteristic(UUID serviceUuid, UUID charUuid, byte[] data, int writeType) {
         if (bluetoothGatt == null) {
@@ -125,6 +134,7 @@ public class BleManager {
         }
     }
 
+    //This method is just a helper for debugging BLE data.
     private String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
@@ -132,6 +142,8 @@ public class BleManager {
         }
         return sb.toString().trim();
     }
+
+    //this is an anonymous inner class.
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
@@ -144,7 +156,8 @@ public class BleManager {
                     gatt.discoverServices();
                 }
             }
-            
+
+            //notify the listeners .Tell all activities the connections changed.
             for (BleListener listener : new ArrayList<>(listeners)) {
                 listener.onConnectionStateChange(newState);
             }

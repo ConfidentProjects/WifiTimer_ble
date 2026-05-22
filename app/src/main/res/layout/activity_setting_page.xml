@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#A8E6EF"
+    android:background="#FFFFFF"
     tools:context=".SettingPageActivity">
 
     <!-- Extended Blue Header Box to include Tabs -->
@@ -64,7 +64,6 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Panels Container -->
@@ -72,7 +71,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@id/applyButton"
+        app:layout_constraintBottom_toTopOf="@id/buttonContainer"
         app:layout_constraintTop_toBottomOf="@id/headerFrame">
 
         <FrameLayout
@@ -309,6 +308,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
                     android:orientation="horizontal">
 
                     <EditText
@@ -337,22 +337,62 @@
                         android:inputType="number"
                         android:padding="12dp" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Grease Qty"
+                    android:textColor="#333333"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etGreaseQty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/rounded_edittext"
+                    android:hint="Enter grease quantity"
+                    android:inputType="number"
+                    android:padding="12dp" />
             </LinearLayout>
         </FrameLayout>
     </ScrollView>
 
-    <Button
-        android:id="@+id/applyButton"
-        android:layout_width="wrap_content"
-        android:layout_height="60dp"
-        android:layout_margin="16dp"
-        android:minWidth="200dp"
-        android:backgroundTint="#673AB7"
-        android:text="APPLY CHANGES"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold"
+    <LinearLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/disconnectButton"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="#000000"
+            app:cornerRadius="0dp"
+            android:text="DISCONNECT"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/applyButton"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="#000000"
+            app:cornerRadius="0dp"
+            android:text="APPLY CHANGES"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
